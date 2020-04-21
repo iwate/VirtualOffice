@@ -1,0 +1,218 @@
+﻿@inject Microsoft.Extensions.Options.IOptions<Config> config
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual Office</title>
+    <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="app" v-on:pointermove="handlePointerMove"
+         v-on:pointerup="handlePointerUp">
+        <vo-floor src="@config.Value.FloorImage" :ratio.sync="ratio" :offset.sync="offset">
+            <vo-desk v-for="(desk, index) in desks"
+                     :key="desk.id"
+                     :x="desk.x"
+                     :y="desk.y"
+                     :r="desk.r"
+                     :ratio="ratio"
+                     :offset="offset"
+                     :selected="desk.selected">
+                <vo-user v-for="user in participants(desk)" :key="user.connectionId"
+                         :name="user.name"
+                         :icon="user.icon"
+                         :me="user.me"
+                         :x="user.x"
+                         :y="user.y"
+                         v-on:pointerdown="handlePointerDownOnUser(user)"></vo-user>
+            </vo-desk>
+            <vo-user me
+                     :name="me.name"
+                     :icon="me.icon"
+                     :x="me.x"
+                     :y="me.y"
+                     v-if="me"></vo-user>
+        </vo-floor>
+        <vo-toolbar :x="toolbar.x"
+                    :y="toolbar.y"
+                    :face-stream.sync="faceStream"
+                    :desktop-stream.sync="desktopStream"
+                    v-on:pointerdown="handlePointerDownOnToolbar"></vo-toolbar>
+        <vo-meeting :skyway-key="skywayKey"
+                    :user-id="userId"
+                    :room-id="roomId"
+                    :face-stream="faceStream"
+                    :desktop-stream="desktopStream"
+                    v-if="userId"></vo-meeting>
+    </div>
+    <script src="~/lib/vue/dist/vue.min.js"></script>
+    <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <partial name="Components/Floor" />
+    <partial name="Components/Desk" />
+    <partial name="Components/User" />
+    <partial name="Components/Toolbar" />
+    <partial name="Components/Switch" />
+    <partial name="Components/Meeting" />
+    <script>
+        Vue.config.devtools = true;
+        Vue.prototype.$signalr = new signalR.HubConnectionBuilder().withUrl("/vohub").build();
+        const app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    skywayKey: "@config.Value.SkyWayKey",
+                    faceStream: null,
+                    desktopStream: null,
+                    ratio: 1.0,
+                    offset: 0,
+                    desks: [],
+                    users: [],
+                    toolbar: {
+                        x: 100,
+                        y: 100,
+                    },
+                    me: null,
+                    moving: null
+                }
+            },
+            computed: {
+                userId() {
+                    const user = this.users.find(user => user.me);
+                    return user ? user.connectionId : null;
+                },
+                roomId() {
+                    const user = this.users.find(user => user.me);
+                    return user ? user.deskId : null;
+                }
+            },
+            methods: {
+                participants(desk) {
+                    return this.users
+                        .filter(user => user.deskId === desk.id)
+                        .map((user, index, array) => {
+                            const r = desk.r * this.ratio;
+                            const position = this.arc(r, r, index, array.length);
+                            return Object.assign({}, user, position);
+                        });
+                },
+                callUser(user) {
+                },
+                arc(cx, cy, index, total) {
+                    const r = total > 1 ? total * 10 : 0;
+                    const w = 2 * Math.PI / total;
+                    const dx = r * Math.cos(w * index);
+                    const dy = r * Math.sin(w * index);
+                    const x = cx + dx;
+                    const y = cy + dy;
+                    return { x, y }
+                },
+                hitDesk(x, y) {
+                    for (let desk of this.desks) {
+                        const r = desk.r * this.ratio;
+                        const dx = ~~(desk.x * this.ratio + this.offset.x - x);
+                        const dy = ~~(desk.y * this.ratio + this.offset.y - y);
+                        if ((dx * dx) + (dy * dy) < (r * r)) {
+                            return desk;
+                        }
+                    }
+                    return null;
+                },
+                findDesk(deskId) {
+                    return this.desks.find(desk => desk.id === deskId);
+                },
+                clearSelectedDesk() {
+                    for (let desk of this.desks) {
+                        desk.selected = false;
+                    }
+                },
+                drag(value, movingCallback, postCallback) {
+                    this.moving = {
+                        value,
+                        movingCallback,
+                        postCallback
+                    }
+                },
+                handlePointerDownOnUser(user) {
+                    if (user.me) {
+                        const desk = this.findDesk(user.deskId);
+                        const position = { x: desk.x * this.ratio + this.offset.x, y: desk.y * this.ratio + this.offset.y };
+                        this.me = Object.assign({}, user, position);
+                        this.drag(user, (x, y) => {
+                            this.me.x = x;
+                            this.me.y = y;
+                            this.clearSelectedDesk();
+                            const desk = this.hitDesk(x, y) || this.findDesk(this.me.deskId);
+                            desk.selected = true;
+                        }, () => {
+                            const desk = this.hitDesk(this.me.x, this.me.y);
+                            if (desk && desk.id != this.me.deskId) {
+                                this.moveUser(desk.id);
+                            }
+                            this.clearSelectedDesk();
+                            this.moving = this.me = null;
+                        })
+                    }
+                    else {
+                        this.callUser(user);
+                    }
+                },
+                handlePointerDownOnToolbar(e) {
+                    const dx = e.offsetX;
+                    const dy = e.offsetY;
+                    console.log(dx, dy);
+                    this.drag(this.toolbar, (x, y) => {
+                        this.toolbar.x = x - dx;
+                        this.toolbar.y = y - dy;
+                    })
+                },
+                handlePointerMove(e) {
+                    if (this.moving && this.moving.movingCallback) {
+                        const x = e.clientX;
+                        const y = e.clientY;
+                        this.moving.movingCallback.apply(this, [x, y]);
+                    }
+                },
+                handlePointerUp(e) {
+                    if (this.moving) {
+                        if (this.moving.postCallback) {
+                            this.moving.postCallback();
+                        }
+                        this.moving = null;
+                    }
+                },
+                async enterUser(name, icon) {
+                    const result = await this.$signalr.invoke('EnterUser', name, icon);
+                    if (!result.success) {
+                        alert(result.errorCode);
+                    }
+                },
+                async moveUser(deskId) {
+                    const result = await this.$signalr.invoke('MoveUser', deskId);
+                    if (!result.success) {
+                        alert(result.errorCode);
+                    }
+                }
+            },
+            mounted() {
+                this.$signalr.on('Desks', desks => {
+                    this.desks.splice(0, this.desks.length, ...desks.map(d => Object.assign(d, { selected: false })));
+                });
+                this.$signalr.on('Reflesh', users => {
+                    for (const user of users) {
+                        user.me = user.connectionId == this.$signalr.connectionId;
+                    }
+                    this.users.splice(0, this.users.length, ...users);
+                });
+                this.$signalr.start().then(async () => {
+                    const name = prompt("Enter Username");
+                    if (name) {
+                        this.enterUser(name, null);
+                    }
+                }).catch(err => alert(err));
+            }
+        });
+    </script>
+</body>
+</html>

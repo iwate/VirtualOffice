@@ -1,0 +1,66 @@
+﻿<style>
+    .vo-floor {
+        width: 100%;
+        height:100%;
+        position: relative;
+    }
+        .vo-floor img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            user-select: none;
+            pointer-events: none;
+        }
+</style>
+<template id="floor-component">
+    <div class="vo-floor">
+        <img ref="image" :src="src" v-on:load="handleImageLoad"/>
+        <slot></slot>
+    </div>
+</template>
+<script type="module">
+    import { debounce } from '/js/helpers.js'
+    Vue.component('vo-floor', {
+        template: '#floor-component',
+        props: {
+            src: { type: String }
+        },
+        data() {
+            return {
+            }
+        },
+        computed: {
+        },
+        methods: {
+            updateRatio() {
+                const ratio = Math.min(
+                    this.$refs.image.clientWidth / this.$refs.image.naturalWidth,
+                    this.$refs.image.clientHeight / this.$refs.image.naturalHeight
+                );
+                const offset = {
+                    x: (this.$refs.image.clientWidth - this.$refs.image.naturalWidth * ratio) / 2,
+                    y: (this.$refs.image.clientHeight - this.$refs.image.naturalHeight * ratio) / 2
+                };
+                this.$emit('update:ratio', ratio);
+                this.$emit('update:offset', offset);
+            },
+            handleImageLoad() {
+                this.updateRatio();
+            },
+            handleWindowResize: debounce(function () {
+                this.updateRatio();
+            }, 50)
+        },
+        created: function() {
+            window.addEventListener('resize', this.handleWindowResize, false);
+        },
+        mounted() {
+        },
+        beforeDestroy: function () {
+            window.removeEventListener('resize', this.handleWindowResize, false);
+        }
+    })
+</script>

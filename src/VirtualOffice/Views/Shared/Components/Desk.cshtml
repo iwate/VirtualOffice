@@ -1,0 +1,47 @@
+﻿<style>
+    .vo-desk {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.15);
+        box-sizing: content-box;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+    .vo-desk.--select {
+        border-color: red;
+    }
+</style>
+<template id="desk-component">
+    <div :class="['vo-desk', {'--select': selected}]" :style="style">
+        <slot></slot>
+    </div>
+</template>
+<script>
+    Vue.component('vo-desk', {
+        template: '#desk-component',
+        props: {
+            x: { type: Number },
+            y: { type: Number },
+            r: { type: Number },
+            ratio: { type: Number, defaultValue: 1.0 },
+            offset: { type: Object, defaultValue: { x:0, y:0 } },
+            selected: { type: Boolean },
+        },
+        computed: {
+            style() {
+                const x = this.x * this.ratio + this.offset.x;
+                const y = this.y * this.ratio + this.offset.y;
+                const r = this.r * this.ratio;
+                return {
+                    width: (r * 2) + 'px',
+                    height: (r * 2) + 'px',
+                    left: (x - r) + 'px',
+                    top: (y - r) + 'px'
+                }
+            }
+        },
+        methods: {
+        },
+        mounted() {
+        }
+    })
+</script>

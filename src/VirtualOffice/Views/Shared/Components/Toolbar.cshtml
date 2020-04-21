@@ -1,0 +1,169 @@
+﻿<style>
+    .vo-toolbar {
+        display: inline-block;
+        position: absolute;
+        width: 240px;
+    }
+        .vo-toolbar video {
+            width: 100%;
+            min-height: 100%;
+            background: black;
+        }
+
+    .vo-toolbar__actions {
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+    }
+    .vo-toolvar__settings {
+        display: none;
+        position: absolute;
+        background: white;
+    }
+        .vo-toolvar__settings.--show {
+            display: block;
+        }
+    .vo-toolvar__settings label {
+        display: block;
+    }
+</style>
+<template id="toolbar-component">
+    <div class="vo-toolbar"
+         :style="style"
+         v-on:pointerdown="$emit('pointerdown', $event)">
+        <video ref="video"></video>
+        <div class="vo-toolbar__actions">
+            <vo-switch icon="desktop" v-on:click="shareDesktop"></vo-switch>
+            <vo-switch icon="camera" v-model="camera" v-on:input="toggleCamera"></vo-switch>
+            <vo-switch icon="microphone" v-model="microphone" v-on:input="toggleMicrophone"></vo-switch>
+            <vo-switch icon="cog" v-model="settings"></vo-switch>
+        </div>
+        <div :class="['vo-toolvar__settings', {'--show': settings}]">
+            <div>
+                <p>Camera</p>
+                <label v-for="device in cameras" :key="device.deviceId">
+                    <input type="radio" name="camera" :value="device.deviceId" v-model="cameraDevice" /> {{device.label}}
+                </label>
+            </div>
+            <div>
+                <p>Microphone</p>
+                <label v-for="device in microphones" :key="device.deviceId">
+                    <input type="radio" name="microphone" :value="device.deviceId" v-model="microphoneDevice"/> {{device.label}}
+                </label>
+            </div>
+            <button v-on:click="handleSetting">OK</button>
+        </div>
+    </div>
+</template>
+<script type="module">
+    import { addStreamStopListener } from '/js/helpers.js'
+
+    Vue.component('vo-toolbar', {
+        template: '#toolbar-component',
+        props: {
+            x: { type: Number },
+            y: { type: Number },
+        },
+        data() {
+            return {
+                desktop: false,
+                camera: true,
+                microphone: true,
+                settings: false,
+                cameras: [],
+                microphones: [],
+                cameraDevice: null,
+                microphoneDevice: null
+            }
+        },
+        computed: {
+            style() {
+                return {
+                    left: this.x + 'px',
+                    top: this.y + 'px',
+                }
+            }
+        },
+        methods: {
+            async handleSetting() {
+                this.settings = false;
+                await this.updateStream();
+            },
+            toggleCamera() {
+                for (let track of this.stream.getVideoTracks()) {
+                    track.enabled = this.camera;
+                }
+            },
+            toggleMicrophone() {
+                for (let track of this.stream.getAudioTracks()) {
+                    track.enabled = this.microphone;
+                }
+            },
+            async updateStream() {
+                if (this.$refs.video.srcObject != null) {
+                    this.$refs.video.pause();
+                    this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+                    this.$refs.video.srcObject = null;
+                }
+
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: this.cameraDevice ? {
+                        deviceId: this.cameraDevice,
+                        width: { min: 256, ideal: 256, max: 1024 },
+                        height: { min: 194, ideal: 194, max: 776 }
+                    } : false,
+                    audio: this.microphoneDevice ? {
+                        deviceId: this.microphoneDevice
+                    } : false
+                }).catch(err => alert(err));
+
+                this.$refs.video.srcObject = this.stream;
+                this.$refs.video.muted = true;
+                this.$refs.video.playsInline = true;
+                await this.$refs.video.play().catch(err => alert(err));
+                this.$emit('update:face-stream', this.stream);
+            },
+            async shareDesktop() {
+                if (this._shareDesktop)
+                    return;
+
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    audio: false,
+                    video: {
+                        width: { min: 512, ideal: 1920, max: 1920 },
+                    },
+                }).catch(err => alert(err));
+
+                if (stream) {
+                    addStreamStopListener(stream, () => {
+                        stream.getTracks().forEach(track => track.stop());
+                        this._shareDesktop = false;
+                        this.$emit('update:desktop-stream', null);
+                    });
+                    this._shareDesktop = true;
+                    this.$emit('update:desktop-stream', stream);
+                }
+            }
+        },
+        async mounted() {
+            const devices = await window.navigator.mediaDevices.enumerateDevices();
+            for (let device of devices) {
+                if (device.kind === 'videoinput') {
+                    this.cameras.push(device);
+                }
+                if (device.kind === 'audioinput') {
+                    this.microphones.push(device);
+                }
+            }
+
+            if (this.cameras.length > 0)
+                this.cameraDevice = this.cameras[0].deviceId;
+
+            if (this.microphones.length > 0)
+                this.microphoneDevice = this.microphones[0].deviceId;
+
+            await this.updateStream();
+        }
+    })
+</script>

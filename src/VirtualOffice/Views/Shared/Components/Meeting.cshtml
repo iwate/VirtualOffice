@@ -1,0 +1,153 @@
+﻿<style>
+    .vo-meeting {
+        position: absolute;
+        bottom: 0;
+        background: black;
+        width: 100%;
+    }
+
+    .vo-meeting__faces {
+        text-align: center;
+    }
+
+        .vo-meeting__faces video {
+            width: 240px;
+        }
+
+    .vo-meeting .--hidden {
+        display: none;
+    }
+
+    .vo-meeting__toggle {
+        color: white;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        width: 100%;
+    }
+</style>
+<template id="meeting-component">
+    <div class="vo-meeting">
+        <div :class="{'--hidden': !open}" style="text-align:center;">
+            <div ref="faces" class="vo-meeting__faces">
+            </div>
+            <video ref="desktop" class="--hidden"></video>
+        </div>
+        <button class="vo-meeting__toggle" v-on:click="open=!open">
+            <i :class="['fa', open ? 'fa-chevron-down' : 'fa-chevron-up']"></i>
+        </button>
+    </div>
+</template>
+<script src="//cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
+<script type="module">
+    import { SkywayFSM } from '/js/helpers.js'
+
+    Vue.component('vo-meeting', {
+        template: '#meeting-component',
+        props: {
+            skywayKey: { type: String },
+            roomId: { type: String },
+            userId: { type: String },
+            faceStream: { type: Object },
+            desktopStream: { type: Object },
+        },
+        data() {
+            return {
+                open: true
+            }
+        },
+        computed: {
+        },
+        methods: {
+            closeVideo(video) {
+                video.pause();
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        },
+        watch: {
+            roomId(value) {
+                this.faceSkyway.reset(value, this.faceStream);
+                this.desktopSkyway.reset(value, this.desktopStream);
+            },
+            faceStream(value) {
+                this.faceSkyway.reset(this.roomId, value);
+            },
+            desktopStream(value) {
+                this.desktopSkyway.reset(this.roomId, value);
+            }
+        },
+        async mounted() {
+            const peer = await new Promise(resolve => {
+                const peer = new Peer(this.userId, {
+                    key: this.skywayKey,
+                    debug: 3,
+                });
+                peer.on('open', () => setTimeout(() => resolve(peer), 100));
+                peer.on('error', err => alert(err));
+            });
+            this.faceSkyway = new SkywayFSM({
+                suffix: ':face',
+                mode: 'sfu',
+                peer,
+                roomId: this.roomId,
+                localStream: this.faceStream,
+                onData: ({ data, src }) => {
+                },
+                onStream: stream => {
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.playsInline = true;
+                    video.setAttribute('data-peer-id', stream.peerId);
+                    this.$refs.faces.append(video);
+                    video.play().catch(err => alert(err));
+                },
+                onPeerLeave: peerId => {
+                    for (let video of this.$refs.faces.querySelectorAll(`[data-peer-id="${peerId}"]`)) {
+                        this.closeVideo(video);
+                        video.remove();
+                    }
+                },
+                onClose: () => {
+                    for (let video of this.$refs.faces.children) {
+                        this.closeVideo(video);
+                        video.remove();
+                    }
+                },
+            });
+            this.desktopSkyway = new SkywayFSM({
+                suffix: ':desktop',
+                mode: 'sfu',
+                peer,
+                roomId: this.roomId,
+                localStream: this.desktopStream,
+                onData: ({ data, src }) => {
+                },
+                onStream: stream => {
+                    if (this.$refs.desktop.srcObject != null) {
+                        this.closeVideo(this.$refs.desktop);
+                    }
+                    this.$refs.desktop.srcObject = stream;
+                    this.$refs.desktop.playsInline = true;
+                    this.$refs.desktop.classList.remove('--hidden');
+                    this.$refs.desktop.setAttribute('data-peer-id', stream.peerId);
+                    this.$refs.desktop.play().catch(err => alert(err));
+                },
+                onPeerLeave: peerId => {
+                    if (this.$refs.desktop.getAttribute('data-peer-id') === peerId) {
+                        if (this.$refs.desktop.srcObject != null) {
+                            this.closeVideo(this.$refs.desktop);
+                            this.$refs.desktop.classList.add('--hidden');
+                        }
+                    }
+                },
+                onClose: () => {
+                    if (this.$refs.desktop.srcObject != null) {
+                        this.closeVideo(this.$refs.desktop);
+                        this.$refs.desktop.classList.add('--hidden');
+                    }
+                },
+            });
+        }
+    })
+</script>

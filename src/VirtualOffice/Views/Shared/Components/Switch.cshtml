@@ -1,0 +1,54 @@
+﻿<style>
+    .vo-switch {
+        display: inline-block;
+        text-align: center;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        border: none;
+        background: lightgray;
+        user-select: none;
+        cursor: pointer;
+    }
+        .vo-switch.--on {
+            color: rgb(4, 186, 45)
+        }
+    .vo-switch input {
+        display:none;
+    }
+</style>
+<template id="switch-component">
+    <label :class="['vo-switch', {'--on': value}]"
+           v-on:pointerdown.stop="">
+        <input type="checkbox" 
+               v-on:click.stop="handleClick"
+               v-on:input="handleInput" />
+        <i :class="['fa', 'fa-' + icon]"></i>
+    </label>
+</template>
+<script>
+    Vue.component('vo-switch', {
+        template: '#switch-component',
+        props: {
+            icon: { type: String },
+            value: { type: Boolean }
+        },
+        data() {
+            return {
+            }
+        },
+        computed: {
+        },
+        methods: {
+            handleInput(e) {
+                this.$emit('input', e.target.checked);
+            },
+            handleClick() {
+                this.$emit('click');
+            }
+        },
+        mounted() {
+        }
+    })
+</script>
