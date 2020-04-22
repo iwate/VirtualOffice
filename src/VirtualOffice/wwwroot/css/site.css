@@ -9,3 +9,7 @@
     #app::-webkit-scrollbar {
         display: none;
     }
+
+.text-right {
+    text-align: right;
+}

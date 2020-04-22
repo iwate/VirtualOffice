@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Virtual Office</title>
     <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
-    <link href="~/css/site.css" rel="stylesheet" />
+    <link href="~/css/site.css?1" rel="stylesheet" />
 </head>
 <body>
     <div id="app" v-on:pointermove="handlePointerMove"
@@ -46,6 +46,15 @@
                     :face-stream="faceStream"
                     :desktop-stream="desktopStream"
                     v-if="userId"></vo-meeting>
+        <vo-dialog v-model="call">
+            <template v-slot:default>
+                <p>{{call.name}} is calling you. Are you sure you want to move the desk?</p>
+                <div class="text-right">
+                    <button v-on:click="call=null">No</button>
+                    <button v-on:click="acceptCall">Yes</button>
+                </div>
+            </template>
+        </vo-dialog>
     </div>
     <script src="~/lib/vue/dist/vue.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
@@ -55,7 +64,10 @@
     <partial name="Components/Toolbar" />
     <partial name="Components/Switch" />
     <partial name="Components/Meeting" />
+    <partial name="Components/Dialog" />
     <script>
+        const bell = new Audio();
+        bell.src = '/sound/crrect_answer3/crrect_answer3.mp3';
         Vue.config.devtools = true;
         Vue.prototype.$signalr = new signalR.HubConnectionBuilder().withUrl("/vohub").build();
         const app = new Vue({
@@ -74,7 +86,8 @@
                         y: 100,
                     },
                     me: null,
-                    moving: null
+                    moving: null,
+                    call: null
                 }
             },
             computed: {
@@ -96,8 +109,6 @@
                             const position = this.arc(r, r, index, array.length);
                             return Object.assign({}, user, position);
                         });
-                },
-                callUser(user) {
                 },
                 arc(cx, cy, index, total) {
                     const r = total > 1 ? total * 10 : 0;
@@ -155,7 +166,9 @@
                         })
                     }
                     else {
-                        this.callUser(user);
+                        if (confirm(`Are you sure you want to call ${user.name}?`)) {
+                            this.callUser(user.connectionId);
+                        }
                     }
                 },
                 handlePointerDownOnToolbar(e) {
@@ -182,6 +195,10 @@
                         this.moving = null;
                     }
                 },
+                acceptCall() {
+                    this.moveUser(this.call.deskId);
+                    this.call = null;
+                },
                 async enterUser(name, icon) {
                     const result = await this.$signalr.invoke('EnterUser', name, icon);
                     if (!result.success) {
@@ -193,11 +210,21 @@
                     if (!result.success) {
                         alert(result.errorCode);
                     }
+                },
+                async callUser(connectionId) {
+                    const result = await this.$signalr.invoke('CallUser', connectionId);
+                    if (!result.success) {
+                        alert(result.errorCode);
+                    }
                 }
             },
             mounted() {
                 this.$signalr.on('Desks', desks => {
                     this.desks.splice(0, this.desks.length, ...desks.map(d => Object.assign(d, { selected: false })));
+                });
+                this.$signalr.on('Call', user => {
+                    bell.play();
+                    this.call = user;
                 });
                 this.$signalr.on('Reflesh', users => {
                     for (const user of users) {

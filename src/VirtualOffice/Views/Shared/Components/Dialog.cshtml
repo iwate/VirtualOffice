@@ -1,0 +1,43 @@
+﻿<style>
+    .vo-dialog {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        background: rgba(0,0,0,0.15);
+    }
+    .vo-dialog__content {
+        border-radius: 4px;
+        padding: 1rem;
+        background: white;
+    }
+</style>
+<template id="dialog-component">
+    <div class="vo-dialog" v-if="value" v-on:click="$emit('input', false)">
+        <div class="vo-dialog__content" v-on:click.stop="">
+            <slot></slot>
+        </div>
+    </div>
+</template>
+<script>
+    Vue.component('vo-dialog', {
+        template: '#dialog-component',
+        props: {
+            value: { type: Boolean }
+        },
+        data() {
+            return {
+            }
+        },
+        computed: {
+        },
+        methods: {
+        },
+        mounted() {
+        }
+    })
+</script>

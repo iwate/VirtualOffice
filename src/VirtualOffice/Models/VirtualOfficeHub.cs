@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace VirtualOffice.Models
@@ -48,6 +47,23 @@ namespace VirtualOffice.Models
             _store.MoveUser(Context.ConnectionId, deskId);
 
             Reflesh();
+
+            return Result.CreateSucceeded();
+        }
+
+        public async Task<Result> CallUser(string connectionId)
+        {
+            var src = _store.Users.Find(Context.ConnectionId);
+
+            if (src == null)
+                return Result.CreateFaild("NotFound");
+
+            var dst = _store.Users.Find(connectionId);
+
+            if (dst == null)
+                return Result.CreateFaild("NotFound");
+
+            await Clients.Client(dst.ConnectionId).SendAsync("Call", src);
 
             return Result.CreateSucceeded();
         }

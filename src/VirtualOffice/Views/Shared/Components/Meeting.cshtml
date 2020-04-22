@@ -71,10 +71,14 @@
                 this.desktopSkyway.reset(value, this.desktopStream);
             },
             faceStream(value) {
-                this.faceSkyway.reset(this.roomId, value);
+                if (this.faceSkyway) {
+                    this.faceSkyway.reset(this.roomId, value);
+                }
             },
             desktopStream(value) {
-                this.desktopSkyway.reset(this.roomId, value);
+                if (desktopSkyway) {
+                    this.desktopSkyway.reset(this.roomId, value);
+                }
             }
         },
         async mounted() {
