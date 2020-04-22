@@ -42,6 +42,9 @@
         <div :class="['vo-toolvar__settings', {'--show': settings}]">
             <div>
                 <p>Camera</p>
+                <label>
+                    <input type="radio" name="camera" :value="null" v-model="cameraDevice" /> Not use camera
+                </label>
                 <label v-for="device in cameras" :key="device.deviceId">
                     <input type="radio" name="camera" :value="device.deviceId" v-model="cameraDevice" /> {{device.label}}
                 </label>
@@ -131,7 +134,7 @@
                 const stream = await navigator.mediaDevices.getDisplayMedia({
                     audio: false,
                     video: {
-                        width: { min: 512, ideal: 1920, max: 1920 },
+                        width: { max: 1920 },
                     },
                 }).catch(err => alert(err));
 
