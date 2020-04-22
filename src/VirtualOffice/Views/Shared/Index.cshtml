@@ -17,6 +17,7 @@
                      :x="desk.x"
                      :y="desk.y"
                      :r="desk.r"
+                     :mode="desk.mode"
                      :ratio="ratio"
                      :offset="offset"
                      :selected="desk.selected">
@@ -43,6 +44,7 @@
         <vo-meeting :skyway-key="skywayKey"
                     :user-id="userId"
                     :room-id="roomId"
+                    :room-mode="roomMode"
                     :face-stream="faceStream"
                     :desktop-stream="desktopStream"
                     v-if="userId"></vo-meeting>
@@ -98,6 +100,10 @@
                 roomId() {
                     const user = this.users.find(user => user.me);
                     return user ? user.deskId : null;
+                },
+                roomMode() {
+                    const desk = this.desks.find(desk => desk.id === this.roomId);
+                    return desk ? desk.mode : 'sfu';
                 }
             },
             methods: {

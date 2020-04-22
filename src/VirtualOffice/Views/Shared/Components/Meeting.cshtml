@@ -46,8 +46,9 @@
         template: '#meeting-component',
         props: {
             skywayKey: { type: String },
-            roomId: { type: String },
             userId: { type: String },
+            roomId: { type: String },
+            roomMode: { type: String },
             faceStream: { type: Object },
             desktopStream: { type: Object },
         },
@@ -66,18 +67,18 @@
             }
         },
         watch: {
-            roomId(value) {
-                this.faceSkyway.reset(value, this.faceStream);
-                this.desktopSkyway.reset(value, this.desktopStream);
+            roomId(value, oldValue) {
+                this.faceSkyway.reset(value, this.faceStream, this.roomMode);
+                this.desktopSkyway.reset(value, this.desktopStream, this.roomMode);
             },
             faceStream(value) {
                 if (this.faceSkyway) {
-                    this.faceSkyway.reset(this.roomId, value);
+                    this.faceSkyway.reset(this.roomId, value, this.roomMode);
                 }
             },
             desktopStream(value) {
                 if (desktopSkyway) {
-                    this.desktopSkyway.reset(this.roomId, value);
+                    this.desktopSkyway.reset(this.roomId, value, this.roomMode);
                 }
             }
         },
@@ -92,7 +93,7 @@
             });
             this.faceSkyway = new SkywayFSM({
                 suffix: ':face',
-                mode: 'sfu',
+                mode: this.roomMode,
                 peer,
                 roomId: this.roomId,
                 localStream: this.faceStream,
@@ -121,7 +122,7 @@
             });
             this.desktopSkyway = new SkywayFSM({
                 suffix: ':desktop',
-                mode: 'sfu',
+                mode: this.roomMode,
                 peer,
                 roomId: this.roomId,
                 localStream: this.desktopStream,

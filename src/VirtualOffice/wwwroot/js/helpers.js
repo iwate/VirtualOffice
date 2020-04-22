@@ -14,19 +14,20 @@ export class SkywayFSM {
     constructor({ suffix, peer, roomId, localStream, mode, onClose, onData, onStream, onPeerLeave }) {
         this.peer = peer;
         this.suffix = suffix;
-        this.localStream = localStream;
-        this.mode = mode;
         this.onClose = onClose;
         this.onData = onData;
         this.onStream = onStream;
         this.onPeerLeave = onPeerLeave;
         this.status = 'ready';
-        this.reset(roomId, localStream);
+        this.reset(roomId, localStream, mode);
     }
-    reset(roomId, localStream) {
-        if (this.roomId !== roomId || this.localStream !== localStream) {
+    reset(roomId, localStream, mode) {
+        if (this.roomId !== roomId ||
+            this.localStream !== localStream ||
+            this.mode !== mode) {
             this.roomId = roomId;
             this.localStream = localStream;
+            this.mode = mode;
             this.next();
         }
     }
@@ -56,7 +57,7 @@ export class SkywayFSM {
         this.room.on('data', this.onData);
         this.room.on('stream', this.onStream);
         this.room.on('peerLeave', this.onPeerLeave);
-        this.status === 'connecting';
+        this.status = 'connecting';
     }
     close() {
         this.room.close();
