@@ -31,7 +31,7 @@
         <div :class="{'--hidden': !open}" style="text-align:center;">
             <div ref="faces" class="vo-meeting__faces">
             </div>
-            <video ref="desktop" class="--hidden"></video>
+            <video ref="desktop" class="--hidden" v-on:click="toggleFullScreen"></video>
         </div>
         <button class="vo-meeting__toggle" v-on:click="open=!open">
             <i :class="['fa', open ? 'fa-chevron-down' : 'fa-chevron-up']"></i>
@@ -64,6 +64,14 @@
                 video.pause();
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
+            },
+            toggleFullScreen() {
+                if (!document.fullscreen) {
+                    this.$refs.desktop.requestFullscreen();
+                }
+                else {
+                    document.exitFullscreen();
+                }
             }
         },
         watch: {
