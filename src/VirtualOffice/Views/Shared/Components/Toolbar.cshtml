@@ -125,26 +125,29 @@
                     this.$refs.video.srcObject = null;
                 }
 
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: this.cameraDevice ? {
-                        deviceId: this.cameraDevice,
-                        width: { min: 256, ideal: 256, max: 1024 },
-                        height: { min: 194, ideal: 194, max: 776 }
-                    } : false,
-                    audio: this.microphoneDevice ? {
-                        deviceId: this.microphoneDevice
-                    } : false
-                }).catch(err => {
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: this.cameraDevice ? {
+                            deviceId: this.cameraDevice,
+                            width: { min: 256, ideal: 256, max: 1024 },
+                            height: { min: 194, ideal: 194, max: 776 }
+                        } : false,
+                        audio: this.microphoneDevice ? {
+                            deviceId: this.microphoneDevice
+                        } : false
+                    });
+                    for (let track of this.stream.getVideoTracks()) {
+                        track.enabled = false;
+                    }
+                }
+                catch (err) {
+                    console.error(err);
                     let msg = err;
                     if (err.startsWith('NotReadableError: Could not start video source')) {
                         msg += "\nPlease try 'Not use camera' via setting(cog mark)"
                     }
                     alert(msg);
-                });
-
-                for (let track of this.stream.getVideoTracks()) {
-                    track.enabled = false;
-                }
+                };
 
                 this.$refs.video.srcObject = this.stream;
                 this.$refs.video.muted = true;
