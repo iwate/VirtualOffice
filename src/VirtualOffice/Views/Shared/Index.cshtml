@@ -9,7 +9,8 @@
     <link href="~/css/site.css?1" rel="stylesheet" />
 </head>
 <body>
-    <div id="app" v-on:pointermove="handlePointerMove"
+    <div id="app" 
+         v-on:pointermove="handlePointerMove"
          v-on:pointerup="handlePointerUp">
         <vo-floor src="@config.Value.FloorImage" :ratio.sync="ratio" :offset.sync="offset">
             <vo-desk v-for="(desk, index) in desks"

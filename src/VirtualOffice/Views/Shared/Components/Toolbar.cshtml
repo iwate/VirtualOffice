@@ -40,8 +40,8 @@
         <video ref="video"></video>
         <div class="vo-toolbar__actions">
             <vo-switch icon="desktop" v-on:click="shareDesktop"></vo-switch>
-            <vo-switch icon="camera" v-model="camera" v-on:input="toggleCamera"></vo-switch>
-            <vo-switch icon="microphone" v-model="microphone" v-on:input="toggleMicrophone"></vo-switch>
+            <vo-switch icon="camera" :value="camera" v-on:input="toggleCamera"></vo-switch>
+            <vo-switch icon="microphone" :value="microphone" v-on:input="toggleMicrophone"></vo-switch>
             <vo-switch icon="cog" v-model="settings"></vo-switch>
         </div>
         <div class="vo-toolbar__message">
@@ -109,11 +109,13 @@
                 await this.updateStream();
             },
             toggleCamera() {
+                this.camera = !this.camera;
                 for (let track of this.stream.getVideoTracks()) {
                     track.enabled = this.camera;
                 }
             },
             toggleMicrophone() {
+                this.microphone = !this.microphone;
                 for (let track of this.stream.getAudioTracks()) {
                     track.enabled = this.microphone;
                 }
@@ -195,6 +197,17 @@
                 this.microphoneDevice = this.microphones[0].deviceId;
 
             await this.updateStream();
+
+            document.addEventListener('keydown', e => {
+                if (e.target.constructor !== HTMLInputElement) {
+                    if (e.key === 'c') {
+                        this.toggleCamera();
+                    }
+                    if (e.key === 'm') {
+                        this.toggleMicrophone();
+                    }
+                }
+            })
         }
     })
 </script>
