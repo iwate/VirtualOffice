@@ -27,6 +27,7 @@
                          :me="user.me"
                          :x="user.x"
                          :y="user.y"
+                         :message="user.message"
                          v-on:pointerdown="handlePointerDownOnUser(user)"></vo-user>
             </vo-desk>
             <vo-user me
@@ -40,7 +41,8 @@
                     :y="toolbar.y"
                     :face-stream.sync="faceStream"
                     :desktop-stream.sync="desktopStream"
-                    v-on:pointerdown="handlePointerDownOnToolbar"></vo-toolbar>
+                    v-on:pointerdown="handlePointerDownOnToolbar"
+                    v-on:tweet="handleSendMessage"></vo-toolbar>
         <vo-meeting :skyway-key="skywayKey"
                     :user-id="userId"
                     :room-id="roomId"
@@ -89,7 +91,7 @@
                     },
                     me: null,
                     moving: null,
-                    call: null
+                    call: null,
                 }
             },
             computed: {
@@ -201,6 +203,9 @@
                         this.moving = null;
                     }
                 },
+                handleSendMessage(message) {
+                    this.tweetUser(message);
+                },
                 acceptCall() {
                     this.moveUser(this.call.deskId);
                     this.call = null;
@@ -219,6 +224,12 @@
                 },
                 async callUser(connectionId) {
                     const result = await this.$signalr.invoke('CallUser', connectionId);
+                    if (!result.success) {
+                        alert(result.errorCode);
+                    }
+                },
+                async tweetUser(message) {
+                    const result = await this.$signalr.invoke('TweetUser', message);
                     if (!result.success) {
                         alert(result.errorCode);
                     }

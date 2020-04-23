@@ -49,7 +49,23 @@ namespace VirtualOffice.Models
                     ConnectionId = current.ConnectionId,
                     Name = current.Name,
                     Icon = current.Icon,
-                    DeskId = deskId
+                    DeskId = deskId,
+                    Message = current.Message
+                }, current);
+            }
+        }
+
+        public void TweetUser(string connectionId, string message)
+        {
+            if (_users.TryGetValue(connectionId, out var current))
+            {
+                _users.TryUpdate(connectionId, new VirtualOfficeUser
+                {
+                    ConnectionId = current.ConnectionId,
+                    Name = current.Name,
+                    Icon = current.Icon,
+                    DeskId = current.DeskId,
+                    Message = message
                 }, current);
             }
         }

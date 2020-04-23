@@ -68,6 +68,20 @@ namespace VirtualOffice.Models
             return Result.CreateSucceeded();
         }
 
+        public Result TweetUser(string message)
+        {
+            var src = _store.Users.Find(Context.ConnectionId);
+
+            if (src == null)
+                return Result.CreateFaild("NotFound");
+
+            _store.TweetUser(Context.ConnectionId, message);
+
+            Reflesh();
+
+            return Result.CreateSucceeded();
+        }
+
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
