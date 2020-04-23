@@ -10,10 +10,6 @@
         text-align: center;
     }
 
-        .vo-meeting__faces video {
-            width: 240px;
-        }
-
     .vo-meeting .--hidden {
         display: none;
     }
@@ -30,6 +26,10 @@
     <div class="vo-meeting">
         <div :class="{'--hidden': !open}" style="text-align:center;">
             <div ref="faces" class="vo-meeting__faces">
+                <vo-face v-for="stream in faces"
+                          :name="findName(stream.peerId)" 
+                          :stream="stream">
+                </vo-face>
             </div>
             <video ref="desktop" class="--hidden" v-on:click="toggleFullScreen"></video>
         </div>
@@ -51,15 +51,21 @@
             roomMode: { type: String },
             faceStream: { type: Object },
             desktopStream: { type: Object },
+            users: { type: Array }
         },
         data() {
             return {
-                open: true
+                open: true,
+                faces: []
             }
         },
         computed: {
         },
         methods: {
+            findName(connectionId) {
+                const user = this.users.find(u => u.connectionId === connectionId);
+                return user ? user.name : null;
+            },
             closeVideo(video) {
                 video.pause();
                 video.srcObject.getTracks().forEach(track => track.stop());
@@ -108,24 +114,16 @@
                 onData: ({ data, src }) => {
                 },
                 onStream: stream => {
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.playsInline = true;
-                    video.setAttribute('data-peer-id', stream.peerId);
-                    this.$refs.faces.append(video);
-                    video.play().catch(err => alert(err));
+                    this.faces.push(stream);
                 },
                 onPeerLeave: peerId => {
-                    for (let video of this.$refs.faces.querySelectorAll(`[data-peer-id="${peerId}"]`)) {
-                        this.closeVideo(video);
-                        video.remove();
+                    const index = this.faces.findIndex(stream => stream.peerId === peerId);
+                    if (index != -1) {
+                        this.faces.splice(index, 1);
                     }
                 },
                 onClose: () => {
-                    for (let video of this.$refs.faces.children) {
-                        this.closeVideo(video);
-                        video.remove();
-                    }
+                    this.faces.splice(0);
                 },
             });
             this.desktopSkyway = new SkywayFSM({

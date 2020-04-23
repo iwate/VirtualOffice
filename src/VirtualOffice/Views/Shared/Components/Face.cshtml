@@ -1,0 +1,60 @@
+﻿<style>
+    .vo-face {
+        display: inline-block;
+        width:240px;
+        border: 1px solid white;
+    }
+        .vo-face video {
+            width: 240px;
+        }
+    .vo-face__name{
+        text-align: center;
+        color: white;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<template id="face-component">
+    <div class="vo-face">
+        <video ref="video" playsinline></video>
+        <p class="vo-face__name">{{name}}</p>
+    </div>
+</template>
+<script>
+    Vue.component('vo-face', {
+        template: '#face-component',
+        props: {
+            name: { type: String },
+            stream: { type: MediaStream }
+        },
+        data() {
+            return {
+            }
+        },
+        computed: {
+        },
+        methods: {
+            closeVideo() {
+                if (this.$refs.video.srcObject != null) {
+                    this.$refs.video.pause();
+                    this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+                    this.$refs.video.srcObject = null;
+                }
+            }
+        },
+        watch: {
+            stream(value) {
+                this.closeVideo();
+                this.$refs.video.srcObject = value;
+                video.play().catch(err => alert(err));
+            }
+        },
+        mounted() {
+            this.$refs.video.srcObject = this.stream;
+            this.$refs.video.play().catch(err => alert(err));
+        },
+        beforeDestroy() {
+            this.closeVideo();
+        }
+    })
+</script>

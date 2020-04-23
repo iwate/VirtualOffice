@@ -9,7 +9,7 @@
     <link href="~/css/site.css?1" rel="stylesheet" />
 </head>
 <body>
-    <div id="app" 
+    <div id="app"
          v-on:pointermove="handlePointerMove"
          v-on:pointerup="handlePointerUp">
         <vo-floor src="@config.Value.FloorImage" :ratio.sync="ratio" :offset.sync="offset">
@@ -50,6 +50,7 @@
                     :room-mode="roomMode"
                     :face-stream="faceStream"
                     :desktop-stream="desktopStream"
+                    :users="users"
                     v-if="userId"></vo-meeting>
         <vo-dialog v-model="call">
             <template v-slot:default>
@@ -70,6 +71,7 @@
     <partial name="Components/Switch" />
     <partial name="Components/Meeting" />
     <partial name="Components/Dialog" />
+    <partial name="Components/Face" />
     <script>
         const bell = new Audio();
         bell.src = '/sound/crrect_answer3/crrect_answer3.mp3';
