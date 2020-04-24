@@ -252,6 +252,11 @@
                     }
                     this.users.splice(0, this.users.length, ...users);
                 });
+                this.$signalr.onclose(() => {
+                    if (confirm('SignalR has closed. Please reload page.')) {
+                        window.location.reload();
+                    }
+                });
                 this.$signalr.start().then(async () => {
                     const name = prompt("Enter Username");
                     if (name) {
