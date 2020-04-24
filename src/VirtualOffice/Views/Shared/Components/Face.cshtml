@@ -46,7 +46,7 @@
             stream(value) {
                 this.closeVideo();
                 this.$refs.video.srcObject = value;
-                video.play().catch(err => alert(err));
+                this.$refs.video.play().catch(err => alert(err));
             }
         },
         mounted() {
