@@ -37,6 +37,7 @@
         position: absolute;
         top: -12px;
         left: 6px;
+        z-index: 1;
     }
     .vo-user.--has-message::after {
         content: attr(data-message);
@@ -46,13 +47,17 @@
         position: absolute;
         top: -50px;
         width: max-content;
+        z-index: 1;
     }
 </style>
 <template id="user-component">
-    <div :class="['vo-user', {'--me': me, '--has-message': message}]" :style="style" :title="name" :data-message="message"
-         v-on:pointerdown="$emit('pointerdown',$event)"
-         v-on:click="$emit('click',$event)">
-        <div class="vo-user__avator">
+    <div :class="['vo-user', {'--me': me, '--has-message': message}]" 
+         :style="style" 
+         :title="name" 
+         :data-message="message">
+        <div class="vo-user__avator" 
+             v-on:pointerdown="$emit('pointerdown',$event)"
+             v-on:click="$emit('click',$event)">
             <img :src="icon" />
         </div>
     </div>
