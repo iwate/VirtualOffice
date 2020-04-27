@@ -39,10 +39,11 @@
          v-on:pointerdown="$emit('pointerdown', $event)">
         <video ref="video"></video>
         <div class="vo-toolbar__actions">
-            <vo-switch icon="desktop" v-on:click="shareDesktop"></vo-switch>
-            <vo-switch icon="camera" :value="camera" v-on:input="toggleCamera"></vo-switch>
-            <vo-switch icon="microphone" :value="microphone" v-on:input="toggleMicrophone"></vo-switch>
-            <vo-switch icon="cog" v-model="settings"></vo-switch>
+            <vo-switch icon="handshake" :value="screenDrawer" v-on:click="connectScreenDrawer" title="Connect screen drawer"></vo-switch>
+            <vo-switch icon="desktop" v-on:click="shareDesktop" title="Share desktop screen"></vo-switch>
+            <vo-switch icon="camera" :value="camera" v-on:input="toggleCamera" title="Toggle camera"></vo-switch>
+            <vo-switch icon="microphone" :value="microphone" v-on:input="toggleMicrophone" title="Toggle microphone"></vo-switch>
+            <vo-switch icon="cog" v-model="settings" title="Setting devices"></vo-switch>
         </div>
         <div class="vo-toolbar__message">
             <input v-model="message" /><button v-on:click="$emit('tweet', message);message=null">TWEET</button>
@@ -84,6 +85,7 @@
         },
         data() {
             return {
+                screenDrawer: false,
                 desktop: false,
                 camera: false,
                 microphone: true,
@@ -92,7 +94,7 @@
                 microphones: [],
                 cameraDevice: null,
                 microphoneDevice: null,
-                message: null
+                message: null,
             }
         },
         computed: {
@@ -177,6 +179,20 @@
                     this._shareDesktop = true;
                     this.$emit('update:desktop-stream', stream);
                 }
+            },
+            connectScreenDrawer() {
+                if (!this.screenDrawer) {
+                    const socket = new WebSocket('wss://localhost:44190/draw');
+                    socket.onopen = () => {
+                        this.screenDrawer = true;
+                        this.$emit('update:sdsocket', socket);
+                    };
+
+                    socket.onclose = () => {
+                        this.screenDrawer = false;
+                        this.$emit('update:sdsocket', socket);
+                    };
+                }
             }
         },
         async mounted() {
@@ -197,6 +213,8 @@
                 this.microphoneDevice = this.microphones[0].deviceId;
 
             await this.updateStream();
+
+            this.connectScreenDrawer();
 
             document.addEventListener('keydown', e => {
                 if (e.target.constructor !== HTMLInputElement) {

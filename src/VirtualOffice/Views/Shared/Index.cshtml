@@ -42,6 +42,7 @@
                     :y="toolbar.y"
                     :face-stream.sync="faceStream"
                     :desktop-stream.sync="desktopStream"
+                    :sdsocket.sync="screenDrawerSocket"
                     v-on:pointerdown="handlePointerDownOnToolbar"
                     v-on:tweet="handleSendMessage"></vo-toolbar>
         <vo-meeting :skyway-key="skywayKey"
@@ -50,6 +51,7 @@
                     :room-mode="roomMode"
                     :face-stream="faceStream"
                     :desktop-stream="desktopStream"
+                    :sdsocket="screenDrawerSocket"
                     :users="users"
                     v-if="userId"></vo-meeting>
         <vo-dialog v-model="call">
@@ -72,6 +74,7 @@
     <partial name="Components/Meeting" />
     <partial name="Components/Dialog" />
     <partial name="Components/Face" />
+    <partial name="Components/Desktop" />
     <script>
         const bell = new Audio();
         bell.src = '/sound/crrect_answer3/crrect_answer3.mp3';
@@ -84,6 +87,7 @@
                     skywayKey: "@config.Value.SkyWayKey",
                     faceStream: null,
                     desktopStream: null,
+                    screenDrawerSocket: null,
                     ratio: 1.0,
                     offset: 0,
                     desks: [],
@@ -185,7 +189,6 @@
                 handlePointerDownOnToolbar(e) {
                     const dx = e.offsetX;
                     const dy = e.offsetY;
-                    console.log(dx, dy);
                     this.drag(this.toolbar, (x, y) => {
                         this.toolbar.x = x - dx;
                         this.toolbar.y = y - dy;

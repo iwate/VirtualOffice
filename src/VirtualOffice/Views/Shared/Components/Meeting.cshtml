@@ -32,7 +32,7 @@
                           :stream="stream">
                 </vo-face>
             </div>
-            <video ref="desktop" class="--hidden" v-on:click="toggleFullScreen"></video>
+            <vo-desktop ref="desktop" :stream="desktop" v-if="desktop" v-on:draw="handleDraw"></vo-desktop>
         </div>
         <button class="vo-meeting__toggle" v-on:click="open=!open">
             <i :class="['fa', open ? 'fa-chevron-down' : 'fa-chevron-up']"></i>
@@ -52,12 +52,14 @@
             roomMode: { type: String },
             faceStream: { type: Object },
             desktopStream: { type: Object },
+            sdsocket: { type: WebSocket },
             users: { type: Array }
         },
         data() {
             return {
                 open: true,
-                faces: []
+                faces: [],
+                desktop: null
             }
         },
         computed: {
@@ -72,13 +74,8 @@
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
             },
-            toggleFullScreen() {
-                if (!document.fullscreen) {
-                    this.$refs.desktop.requestFullscreen();
-                }
-                else {
-                    document.exitFullscreen();
-                }
+            handleDraw(data) {
+                this.desktopSkyway.room.send(JSON.stringify(data))
             }
         },
         watch: {
@@ -134,30 +131,27 @@
                 roomId: this.roomId,
                 localStream: this.desktopStream,
                 onData: ({ data, src }) => {
+                    try {
+                        const payload = JSON.parse(data);
+                        if (this.$refs.desktop) {
+                            this.$refs.desktop.append(payload);
+                        }
+                        if (this.desktopStream && this.sdsocket) {
+                            this.sdsocket.send(data);
+                        }
+                    }
+                    catch { }
                 },
                 onStream: stream => {
-                    if (this.$refs.desktop.srcObject != null) {
-                        this.closeVideo(this.$refs.desktop);
-                    }
-                    this.$refs.desktop.srcObject = stream;
-                    this.$refs.desktop.playsInline = true;
-                    this.$refs.desktop.classList.remove('--hidden');
-                    this.$refs.desktop.setAttribute('data-peer-id', stream.peerId);
-                    this.$refs.desktop.play().catch(err => alert(err));
+                    this.desktop = stream;
                 },
                 onPeerLeave: peerId => {
-                    if (this.$refs.desktop.getAttribute('data-peer-id') === peerId) {
-                        if (this.$refs.desktop.srcObject != null) {
-                            this.closeVideo(this.$refs.desktop);
-                            this.$refs.desktop.classList.add('--hidden');
-                        }
+                    if (this.desktop && this.desktop.peerId == peerId) {
+                        this.desktop = null;
                     }
                 },
                 onClose: () => {
-                    if (this.$refs.desktop.srcObject != null) {
-                        this.closeVideo(this.$refs.desktop);
-                        this.$refs.desktop.classList.add('--hidden');
-                    }
+                    this.desktop = null;
                 },
             });
         }
