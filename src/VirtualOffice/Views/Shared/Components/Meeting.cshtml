@@ -25,9 +25,10 @@
 </style>
 <template id="meeting-component">
     <div class="vo-meeting">
-        <div :class="{'--hidden': !open}" style="text-align:center;">
+        <div :class="{'--hidden': !open}" style="text-align:center;overflow:hidden;">
             <div ref="faces" class="vo-meeting__faces">
                 <vo-face v-for="stream in faces"
+                          :key="stream.peerId"
                           :name="findName(stream.peerId)" 
                           :stream="stream">
                 </vo-face>
