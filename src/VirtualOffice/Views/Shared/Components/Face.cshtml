@@ -35,23 +35,29 @@
         },
         methods: {
             closeVideo() {
-                if (this.$refs.video.srcObject != null) {
+                if (this.$refs.video && this.$refs.video.srcObject != null) {
                     this.$refs.video.pause();
                     this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
                     this.$refs.video.srcObject = null;
+                }
+            },
+            setVideo(stream) {
+                if (this.$refs.video) {
+                    this.$refs.video.srcObject = stream;
+                    if (stream) {
+                        this.$refs.video.play().catch(err => alert(err));
+                    }
                 }
             }
         },
         watch: {
             stream(value) {
                 this.closeVideo();
-                this.$refs.video.srcObject = value;
-                this.$refs.video.play().catch(err => alert(err));
+                this.setVideo(value);
             }
         },
         mounted() {
-            this.$refs.video.srcObject = this.stream;
-            this.$refs.video.play().catch(err => alert(err));
+            this.setVideo(this.stream);
         },
         beforeDestroy() {
             this.closeVideo();
