@@ -135,10 +135,10 @@
                             deviceId: this.cameraDevice,
                             width: { min: 256, ideal: 256, max: 1024 },
                             height: { min: 194, ideal: 194, max: 776 }
-                        } : false,
+                        } : this.cameraDevice === '',
                         audio: this.microphoneDevice ? {
                             deviceId: this.microphoneDevice
-                        } : false
+                        } : this.microphoneDevice === ''
                     });
                     for (let track of this.stream.getVideoTracks()) {
                         track.enabled = false;
