@@ -1,4 +1,4 @@
-﻿@inject Microsoft.Extensions.Options.IOptions<Config> config
+﻿@model IndexViewModel
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +12,7 @@
     <div id="app"
          v-on:pointermove="handlePointerMove"
          v-on:pointerup="handlePointerUp">
-        <vo-floor src="@config.Value.FloorImage" :ratio.sync="ratio" :offset.sync="offset">
+        <vo-floor src="@Model.FloorImage" :ratio.sync="ratio" :offset.sync="offset">
             <vo-desk v-for="(desk, index) in desks"
                      :key="desk.id"
                      :x="desk.x"
@@ -84,7 +84,7 @@
             el: '#app',
             data() {
                 return {
-                    skywayKey: "@config.Value.SkyWayKey",
+                    skywayKey: "@Model.SkyWayKey",
                     faceStream: null,
                     desktopStream: null,
                     screenDrawerSocket: null,
@@ -261,9 +261,10 @@
                     }
                 });
                 this.$signalr.start().then(async () => {
-                    const name = prompt("Enter Username");
+                    const name = '@Model.Name' || prompt("Enter Username");
+                    const icon = '@Model.Icon' || null;
                     if (name) {
-                        this.enterUser(name, null);
+                        this.enterUser(name, icon);
                     }
                 }).catch(err => alert(err));
             }

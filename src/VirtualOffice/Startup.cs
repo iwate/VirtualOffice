@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Net.Http;
 using VirtualOffice.Models;
 
 namespace VirtualOffice
@@ -20,8 +22,15 @@ namespace VirtualOffice
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<Config>(Configuration.GetSection("VirtualOffice"));
+            services.AddHttpClient();
+            services.AddHttpContextAccessor();
             services.AddSingleton<IDeskDispatcher, EmptyDeskDispatcher>();
             services.AddSingleton<VirtualOfficeStore>();
+            services.AddTransient<IUserResolver>(provider =>  
+                new UserResolver()
+                    .Add(new MSGraphUserResolver(
+                        provider.GetRequiredService<IHttpContextAccessor>(), 
+                        provider.GetRequiredService<IHttpClientFactory>())));
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddSignalR();
         }
