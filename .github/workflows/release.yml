@@ -12,7 +12,8 @@ jobs:
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
-          path: ./src/VirtualOffice/
+          path: ./src/
+          dockerfile: ./src/VirtualOffice/Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: iwate/virtual-office
