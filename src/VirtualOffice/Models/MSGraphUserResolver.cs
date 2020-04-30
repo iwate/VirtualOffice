@@ -40,8 +40,8 @@ namespace VirtualOffice.Models
 
         public string GetName(JwtSecurityToken jwt)
         {
-            var lastName = jwt.Claims.Where(o => o.Type == "family_name").FirstOrDefault();
-            var firstName = jwt.Claims.Where(o => o.Type == "given_name").FirstOrDefault();
+            var lastName = jwt.Claims.Where(o => o.Type == "family_name").FirstOrDefault()?.Value;
+            var firstName = jwt.Claims.Where(o => o.Type == "given_name").FirstOrDefault()?.Value;
             var name = $"{lastName} {firstName}";
 
             return !string.IsNullOrWhiteSpace(name) ? name : null;
