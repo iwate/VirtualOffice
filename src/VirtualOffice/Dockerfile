@@ -6,11 +6,14 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
+RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+ENV PATH="$PATH:/root/.dotnet/tools"
 WORKDIR /src
 COPY ["VirtualOffice/VirtualOffice.csproj", "VirtualOffice/"]
 RUN dotnet restore "VirtualOffice/VirtualOffice.csproj"
 COPY . .
 WORKDIR "/src/VirtualOffice"
+RUN libman restore
 RUN dotnet build "VirtualOffice.csproj" -c Release -o /app/build
 
 FROM build AS publish
