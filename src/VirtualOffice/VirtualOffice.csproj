@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Models\Core\" />
+    <Folder Include="Models\Securities\" />
+    <Folder Include="Models\ViewModels\" />
     <Folder Include="wwwroot\lib\" />
     <Folder Include="wwwroot\img\" />
   </ItemGroup>

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Net.Http;
 using VirtualOffice.Models;
 
 namespace VirtualOffice
@@ -25,8 +25,10 @@ namespace VirtualOffice
             services.Configure<Config>(Configuration.GetSection("VirtualOffice"));
             services.AddHttpClient();
             services.AddHttpContextAccessor();
+            services.AddSingleton<KeyStore>();
             services.AddSingleton<VirtualOfficeStore>();
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+            services.AddHostedService<KeyGenService>();
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(opt => { opt.LoginPath = "/login"; });
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddSignalR();
         }

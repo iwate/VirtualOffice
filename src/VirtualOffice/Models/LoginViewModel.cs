@@ -11,6 +11,6 @@ namespace VirtualOffice.Models
         [StringLength(100_000, ErrorMessage = "Your icon is too large.")]
         public string Icon { get; set; }
 
-        public bool IsPersistent { get; set; }
+        public string Code { get; set; }
     }
 }

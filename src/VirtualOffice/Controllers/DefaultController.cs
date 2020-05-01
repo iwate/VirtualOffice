@@ -15,11 +15,13 @@ namespace VirtualOffice.Controllers
 {
     public class DefaultController : Controller
     {
+        private readonly KeyStore _keyStore;
         private readonly IOptions<Config> _config;
         private readonly ILogger<DefaultController> _logger;
 
-        public DefaultController(IOptions<Config> config, ILogger<DefaultController> logger)
+        public DefaultController(KeyStore keyStore, IOptions<Config> config, ILogger<DefaultController> logger)
         {
+            _keyStore = keyStore;
             _config = config;
             _logger = logger;
         }
@@ -37,15 +39,21 @@ namespace VirtualOffice.Controllers
         }
 
         [HttpGet("/login")]
-        public IActionResult Login()
+        public IActionResult Login(string code)
         {
-            return View(new LoginViewModel());
+            if (!_keyStore.Validate(code))
+                return Unauthorized();
+
+            return View(new LoginViewModel { Code = code });
         }
 
         [HttpPost("/login")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            if (!_keyStore.Validate(model.Code))
+                return Unauthorized();
+
             if (!ModelState.IsValid)
                 return View(model);
 

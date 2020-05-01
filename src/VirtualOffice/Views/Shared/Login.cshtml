@@ -32,7 +32,7 @@
         <form method="post" asp-action="Login" v-on:submit="handleSubmit">
             <div>
                 <label asp-for="Name">Name</label>
-                <input asp-for="Name" v-model="name" tabindex="1"/>
+                <input asp-for="Name" v-model="name" tabindex="1" />
                 <span asp-validation-for="Name"></span>
             </div>
 
@@ -49,7 +49,7 @@
                     <li>
                         <label><input type="radio" name="__icon__" value="file" v-model="method" />Use Local File</label>
                         <div v-if="method==='file'">
-                            <input ref="file" type="file" v-on:change="handleFile" accept="image/*"/>
+                            <input ref="file" type="file" v-on:change="handleFile" accept="image/*" />
                         </div>
                     </li>
                     <li>
@@ -69,6 +69,8 @@
                     </li>
                 </ul>
             </div>
+
+            <input asp-for="Code" type="hidden" />
 
             <button type="submit" tabindex="2">Enter</button>
         </form>
