@@ -262,7 +262,7 @@
                 });
                 this.$signalr.start().then(async () => {
                     const name = '@Model.Name' || prompt("Enter Username");
-                    const icon = '@Model.Icon' || null;
+                    const icon = '@Html.Raw(Model.Icon)' || null;
                     if (name) {
                         this.enterUser(name, icon);
                     }

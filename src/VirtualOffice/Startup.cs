@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,7 @@ namespace VirtualOffice
             services.AddHttpClient();
             services.AddHttpContextAccessor();
             services.AddSingleton<VirtualOfficeStore>();
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddSignalR();
         }
@@ -47,7 +49,13 @@ namespace VirtualOffice
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseCookiePolicy(new CookiePolicyOptions
+            {
+                MinimumSameSitePolicy = SameSiteMode.Strict,
+            });
 
             app.UseEndpoints(endpoints =>
             {

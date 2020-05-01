@@ -1,4 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,14 +24,46 @@ namespace VirtualOffice.Controllers
             _logger = logger;
         }
 
+        [Authorize]
+        [HttpGet("/")]
         public IActionResult Index()
         {
             return View(new IndexViewModel { 
                 SkyWayKey = _config.Value.SkyWayKey,
                 FloorImage = _config.Value.FloorImage,
-                Name = null,
-                Icon = null
+                Name = HttpContext.User.FindFirstValue(ClaimTypes.Name),
+                Icon = HttpContext.User.FindFirstValue("icon")
             });
+        }
+
+        [HttpGet("/login")]
+        public IActionResult Login()
+        {
+            return View(new LoginViewModel());
+        }
+
+        [HttpPost("/login")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, model.Name),
+                new Claim("icon", model.Icon),
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+            
+            var authProperties = new AuthenticationProperties { ExpiresUtc = DateTimeOffset.UtcNow.Date.AddDays(1) };
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, authProperties);
+
+            return RedirectToAction(nameof(Index));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

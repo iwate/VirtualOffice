@@ -1,0 +1,187 @@
+﻿@model LoginViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual Office</title>
+    <style>
+        main {
+            max-width: 320px;
+            margin: 0 auto;
+        }
+        .field-validation-error {
+            display: block;
+            color: red;
+            margin-bottom: 1rem;
+        }
+        ul {
+            list-style:none;
+            padding: 0;
+        }
+        input[type="text"] {
+            display:block;
+        }
+        img {
+            display:block;
+        }
+    </style>
+</head>
+<body>
+    <main id="app">
+        <form method="post" asp-action="Login" v-on:submit="handleSubmit">
+            <div>
+                <label asp-for="Name">Name</label>
+                <input asp-for="Name" v-model="name" tabindex="1"/>
+                <span asp-validation-for="Name"></span>
+            </div>
+
+            <div>
+                <label asp-for="Icon">Icon</label>
+                <input id="icon" asp-for="Icon" v-model="icon" type="hidden" />
+                <img :src="icon" />
+                <span asp-validation-for="Icon"></span>
+                <canvas ref="canvas" width="48" height="48" style="display:none;"></canvas>
+                <ul>
+                    <li>
+                        <label><input type="radio" name="__icon__" value="byname" v-model="method" />Generate By Name</label>
+                    </li>
+                    <li>
+                        <label><input type="radio" name="__icon__" value="file" v-model="method" />Use Local File</label>
+                        <div v-if="method==='file'">
+                            <input ref="file" type="file" v-on:change="handleFile" accept="image/*"/>
+                        </div>
+                    </li>
+                    <li>
+                        <label><input type="radio" name="__icon__" value="url" v-model="method" />Use URL</label>
+                        <div v-if="method==='url'">
+                            <input ref="url" type="url" v-on:input="handleUrl" v-on:change="handleUrl" />
+                        </div>
+                    </li>
+                    <li>
+                        <label><input type="radio" name="__icon__" value="github" v-model="method" />Use GitHub Icon</label>
+                        <div v-if="method==='github'">
+                            <input ref="github" type="text" v-on:input="handleGithub" v-on:change="handleGithub" placeholder="GitHub Username">
+                        </div>
+                    </li>
+                    <li>
+                        <label><input type="radio" name="__icon__" value="history" v-model="method" :disabled="!enableHistory" />Use History</label>
+                    </li>
+                </ul>
+            </div>
+
+            <button type="submit" tabindex="2">Enter</button>
+        </form>
+    </main>
+    <script src="~/lib/vue/dist/vue.min.js"></script>
+    <script>
+        Vue.config.devtools = true;
+        new Vue({
+            el: '#app',
+            data: {
+                name: '@Model.Name',
+                icon: '@Model.Icon',
+                method: 'byname',
+                enableHistory: false 
+            },
+            watch: {
+                name() {
+                    this.update();
+                },
+                method() {
+                    this.update();
+                }
+            },
+            methods: {
+                async update() {
+                    if (this.method === 'byname') {
+                        this.handleByName();
+                    }
+                    else if (this.method === 'file') {
+                        await this.handleFile();
+                    }
+                    else if (this.method === 'url') {
+                        this.handleUrl();
+                    }
+                    else if (this.method === 'github') {
+                        this.handleGithub();
+                    }
+                    else if (this.method === 'history') {
+                        this.handleHistory();
+                    }
+                },
+                async updateIconByUrl(url) {
+                    const img = await loadImage(url);
+                    this.$refs.canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height, 0, 0, 48, 48);
+                    this.icon = this.$refs.canvas.toDataURL();
+                },
+                handleByName(e) {
+                    this.icon = `https://ui-avatars.com/api/?name=${this.name}&size=48`;
+                },
+                async handleFile() {
+                    if (this.$refs.file) {
+                        const fileData = this.$refs.file.files[0];
+
+                        const dataUrl = await readFile(fileData);
+
+                        await this.updateIconByUrl(dataUrl);
+                    }
+                },
+                async handleUrl() {
+                    if (this.$refs.url) {
+                        await this.updateIconByUrl(this.$refs.url.value);
+                    }
+                },
+                async handleGithub() {
+                    if (this.$refs.github) {
+                        const response = await fetch(`https://api.github.com/users/${this.$refs.github.value}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            await this.updateIconByUrl(data.avatar_url);
+                        }
+                    }
+                },
+                handleHistory(name = false, icon = true) {
+                    const json = localStorage.getItem('userinfo');
+                    if (json) {
+                        const info = JSON.parse(json);
+                        if (name) this.name = info.name;
+                        if (icon) this.icon = info.icon;
+                    }
+                    return !!json;
+                },
+                handleSubmit() {
+                    const info = { name: this.name, icon: this.icon };
+                    const json = JSON.stringify(info);
+                    localStorage.setItem('userinfo', json);
+                },
+            },
+            mounted() {
+                this.enableHistory = this.handleHistory(true);
+                if (this.enableHistory) {
+                    this.method = 'history';
+                }
+            }
+        })
+        async function readFile(fileData) {
+            return new Promise(function (resolve) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    resolve(reader.result);
+                }
+                reader.readAsDataURL(fileData);
+            })
+        }
+        async function loadImage(url) {
+            return new Promise(function (resolve) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'
+                img.src = url;
+                img.onload = () => {
+                    resolve(img);
+                }
+            })
+        }
+    </script>
+</body>
+</html>
