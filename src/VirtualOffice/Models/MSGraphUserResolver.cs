@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace VirtualOffice.Models
@@ -42,7 +43,10 @@ namespace VirtualOffice.Models
         {
             var lastName = jwt.Claims.Where(o => o.Type == "family_name").FirstOrDefault()?.Value;
             var firstName = jwt.Claims.Where(o => o.Type == "given_name").FirstOrDefault()?.Value;
-            var name = $"{lastName} {firstName}";
+            var name1 = $"{lastName} {firstName}";
+            var name2 = $"{firstName} {lastName}";
+
+            var name = Encoding.UTF8.GetBytes(name1).Length / name1.Length >= 2 ? name1 : name2;
 
             return !string.IsNullOrWhiteSpace(name) ? name : null;
         }
