@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using VirtualOffice.Models;
 
 namespace VirtualOffice
@@ -23,10 +25,15 @@ namespace VirtualOffice
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<Config>(Configuration.GetSection("VirtualOffice"));
-            services.AddHttpClient();
-            services.AddHttpContextAccessor();
+            services.AddSingleton(
+                HtmlEncoder.Create(allowedRanges: new[] {
+                    UnicodeRanges.BasicLatin,
+                    UnicodeRanges.CjkUnifiedIdeographs 
+                }));
             services.AddSingleton<KeyStore>();
             services.AddSingleton<VirtualOfficeStore>();
+            services.AddHttpClient();
+            services.AddHttpContextAccessor();
             services.AddHostedService<KeyGenService>();
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(opt => { opt.LoginPath = "/login"; });
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
