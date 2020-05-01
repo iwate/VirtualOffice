@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,25 +9,21 @@ namespace VirtualOffice.Controllers
     public class DefaultController : Controller
     {
         private readonly IOptions<Config> _config;
-        private readonly IUserResolver _userResolver;
         private readonly ILogger<DefaultController> _logger;
 
-        public DefaultController(IOptions<Config> config, IUserResolver userResolver, ILogger<DefaultController> logger)
+        public DefaultController(IOptions<Config> config, ILogger<DefaultController> logger)
         {
             _config = config;
-            _userResolver = userResolver;
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var info = await _userResolver.ResolveAsync();
-
             return View(new IndexViewModel { 
                 SkyWayKey = _config.Value.SkyWayKey,
                 FloorImage = _config.Value.FloorImage,
-                Name = info?.Name,
-                Icon = info?.Icon
+                Name = null,
+                Icon = null
             });
         }
 

@@ -11,12 +11,9 @@ namespace VirtualOffice.Models
         public IEnumerable<VirtualOfficeUser> Users => _users.Values;
         public IEnumerable<VirtualOfficeDesk> Desks { get; }
 
-        private readonly IDeskDispatcher _deskDispatcher;
-
-        public VirtualOfficeStore(IOptions<Config> config, IDeskDispatcher deskDispatcher)
+        public VirtualOfficeStore(IOptions<Config> config)
         {
             Desks = config.Value.DeskMap ?? Enumerable.Empty<VirtualOfficeDesk>();
-            _deskDispatcher = deskDispatcher;
         }
 
         private static object @lock = new object();
@@ -24,7 +21,9 @@ namespace VirtualOffice.Models
         {
             lock (@lock)
             {
-                var desk = _deskDispatcher.Dispatch(this, connectionId, name);
+                var desks = Desks.OrderBy(desk => desk.R);
+                var desk = desks.FirstOrDefault(d => !Users.Any(u => u.DeskId == d.Id))
+                        ?? desks.FirstOrDefault();
 
                 if (desk == null)
                     return null;

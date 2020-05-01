@@ -24,13 +24,7 @@ namespace VirtualOffice
             services.Configure<Config>(Configuration.GetSection("VirtualOffice"));
             services.AddHttpClient();
             services.AddHttpContextAccessor();
-            services.AddSingleton<IDeskDispatcher, EmptyDeskDispatcher>();
             services.AddSingleton<VirtualOfficeStore>();
-            services.AddTransient<IUserResolver>(provider =>  
-                new UserResolver()
-                    .Add(new MSGraphUserResolver(
-                        provider.GetRequiredService<IHttpContextAccessor>(), 
-                        provider.GetRequiredService<IHttpClientFactory>())));
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddSignalR();
         }
