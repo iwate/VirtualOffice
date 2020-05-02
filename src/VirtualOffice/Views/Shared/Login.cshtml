@@ -149,8 +149,10 @@
                         const info = JSON.parse(json);
                         if (name) this.name = info.name;
                         if (icon) this.icon = info.icon;
+
+                        return info.name && info.icon;
                     }
-                    return !!json;
+                    return false;
                 },
                 handleSubmit() {
                     const info = { name: this.name, icon: this.icon };
