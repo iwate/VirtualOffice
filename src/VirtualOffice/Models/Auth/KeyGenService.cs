@@ -32,8 +32,7 @@ namespace VirtualOffice.Models
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var now = DateTimeOffset.UtcNow;
-                var next = now.Date.AddDays(1);
+                var next = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero).AddDays(1);
 
                 var key = _keyStore.CreateNew(next);
 
@@ -44,14 +43,14 @@ namespace VirtualOffice.Models
 
                 _keyStore.DeleteOld();
 
-                await Task.Delay((int)(next - now).TotalMilliseconds, stoppingToken);
+                await Task.Delay((int)(next - DateTimeOffset.UtcNow).TotalMilliseconds, stoppingToken);
             }
         }
 
         public Task NotifyLoggerAsync(string url, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"LoginUrl: {url}");
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public async Task NotifySlackAsync(string url, CancellationToken cancellationToken)
