@@ -43,6 +43,8 @@
 <script src="//cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
 <script type="module">
     import { SkywayFSM } from '/js/helpers.js'
+    import { sharingDesktopScreen, stopDesktopMedia } from '/js/media.js'
+    import { drawScreenDrawer } from '/js/screendrawer.js'
 
     Vue.component('vo-meeting', {
         template: '#meeting-component',
@@ -51,10 +53,9 @@
             userId: { type: String },
             roomId: { type: String },
             roomMode: { type: String },
-            faceStream: { type: Object },
-            desktopStream: { type: Object },
-            sdsocket: { type: WebSocket },
-            users: { type: Array }
+            users: { type: Array },
+            faceStream: { type: MediaStream },
+            desktopStream: { type: MediaStream }
         },
         data() {
             return {
@@ -70,29 +71,22 @@
                 const user = this.users.find(u => u.connectionId === connectionId);
                 return user ? user.name : null;
             },
-            closeVideo(video) {
-                video.pause();
-                video.srcObject.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-            },
             handleDraw(data) {
                 this.desktopSkyway.room.send(JSON.stringify(data))
             }
         },
         watch: {
-            roomId(value, oldValue) {
-                this.faceSkyway.reset(value, this.faceStream, this.roomMode);
-                this.desktopSkyway.reset(value, this.desktopStream, this.roomMode);
+            roomId(value) {
+                this.faceSkyway.reset({ roomId: value, mode: this.roomMode });
+                this.desktopSkyway.reset({ roomId: value, mode: this.roomMode });
             },
-            faceStream(value) {
-                if (this.faceSkyway) {
-                    this.faceSkyway.reset(this.roomId, value, this.roomMode);
-                }
+            faceStream(stream) {
+                if (this.faceSkyway)
+                    this.faceSkyway.replaceStream(stream);
             },
-            desktopStream(value) {
-                if (this.desktopSkyway) {
-                    this.desktopSkyway.reset(this.roomId, value, this.roomMode);
-                }
+            desktopStream(stream) {
+                if (this.desktopSkyway)
+                    this.desktopSkyway.replaceStream(stream);
             }
         },
         async mounted() {
@@ -137,13 +131,16 @@
                         if (this.$refs.desktop) {
                             this.$refs.desktop.append(payload);
                         }
-                        if (this.desktopStream && this.sdsocket) {
-                            this.sdsocket.send(data);
+                        if (sharingDesktopScreen()) {
+                            drawScreenDrawer(data);
                         }
                     }
                     catch { }
                 },
                 onStream: stream => {
+                    if (sharingDesktopScreen()) {
+                        stopDesktopMedia();
+                    }
                     this.desktop = stream;
                 },
                 onPeerLeave: peerId => {

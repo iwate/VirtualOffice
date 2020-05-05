@@ -40,19 +40,16 @@
         </vo-floor>
         <vo-toolbar :x="toolbar.x"
                     :y="toolbar.y"
-                    :face-stream.sync="faceStream"
-                    :desktop-stream.sync="desktopStream"
-                    :sdsocket.sync="screenDrawerSocket"
+                    :face-stream="faceStream"
                     v-on:pointerdown="handlePointerDownOnToolbar"
                     v-on:tweet="handleSendMessage"></vo-toolbar>
         <vo-meeting :skyway-key="skywayKey"
                     :user-id="userId"
                     :room-id="roomId"
                     :room-mode="roomMode"
+                    :users="users"
                     :face-stream="faceStream"
                     :desktop-stream="desktopStream"
-                    :sdsocket="screenDrawerSocket"
-                    :users="users"
                     v-if="userId"></vo-meeting>
         <vo-dialog v-model="call">
             <template v-slot:default>
@@ -65,7 +62,12 @@
         </vo-dialog>
     </div>
     <script src="~/lib/vue/dist/vue.min.js"></script>
+    <script src="~/lib/vue/dist/vue-composition-api.umd.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        Vue.config.devtools = true;
+        Vue.use(vueCompositionApi);
+    </script>
     <partial name="Components/Floor" />
     <partial name="Components/Desk" />
     <partial name="Components/User" />
@@ -75,19 +77,16 @@
     <partial name="Components/Dialog" />
     <partial name="Components/Face" />
     <partial name="Components/Desktop" />
-    <script>
+    <script type="module">
+        import { onReplaceFaceStream, onReplaceDesktopStream, setMediaDevice } from '/js/media.js'
         const bell = new Audio();
         bell.src = '/sound/crrect_answer3/crrect_answer3.mp3';
-        Vue.config.devtools = true;
         Vue.prototype.$signalr = new signalR.HubConnectionBuilder().withUrl("/vohub").build();
         const app = new Vue({
             el: '#app',
             data() {
                 return {
                     skywayKey: "@Model.SkyWayKey",
-                    faceStream: null,
-                    desktopStream: null,
-                    screenDrawerSocket: null,
                     ratio: 1.0,
                     offset: 0,
                     desks: [],
@@ -99,6 +98,8 @@
                     me: null,
                     moving: null,
                     call: null,
+                    faceStream: null,
+                    desktopStream: null
                 }
             },
             computed: {
@@ -267,6 +268,11 @@
                         this.enterUser(name, icon);
                     }
                 }).catch(err => alert(err));
+
+
+                onReplaceFaceStream(stream => this.faceStream = stream);
+                onReplaceDesktopStream(stream => this.desktopStream = stream);
+                setMediaDevice();
             }
         });
     </script>

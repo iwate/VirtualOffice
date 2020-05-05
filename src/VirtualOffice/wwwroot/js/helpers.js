@@ -1,4 +1,5 @@
-﻿export function debounce(handler, timeout) {
+﻿globalThis.count = (globalThis.count || 0)+1;
+export function debounce(handler, timeout) {
     let timeoutId = null;
     return function () {
         if (timeoutId === null) {
@@ -14,20 +15,29 @@ export class SkywayFSM {
     constructor({ suffix, peer, roomId, localStream, mode, onClose, onData, onStream, onPeerLeave }) {
         this.peer = peer;
         this.suffix = suffix;
+        this.localStream = localStream;
         this.onClose = onClose;
         this.onData = onData;
         this.onStream = onStream;
         this.onPeerLeave = onPeerLeave;
         this.status = 'ready';
-        this.reset(roomId, localStream, mode);
+        this.reset({ roomId, mode });
     }
-    reset(roomId, localStream, mode) {
-        if (this.roomId !== roomId ||
-            this.localStream !== localStream ||
-            this.mode !== mode) {
+    reset({ roomId, mode, stream }) {
+        let changed = false;
+        if (roomId !== undefined && this.roomId !== roomId) {
             this.roomId = roomId;
-            this.localStream = localStream;
+            changed = true;
+        }
+        if (mode !== undefined && this.mode !== mode) {
             this.mode = mode;
+            changed = true;
+        }
+        if (stream !== undefined && this.localStream !== stream) {
+            this.localStream = stream;
+            changed = true;
+        }
+        if (changed) {
             this.next();
         }
     }
@@ -44,7 +54,7 @@ export class SkywayFSM {
     join() {
         this.room = this.peer.joinRoom(this.roomId + this.suffix, {
             mode: this.mode,
-            stream: this.localStream,
+            stream: this.localStream
         });
         this.room.once('open', () => {
             this.status = 'open';
@@ -58,6 +68,17 @@ export class SkywayFSM {
         this.room.on('stream', this.onStream);
         this.room.on('peerLeave', this.onPeerLeave);
         this.status = 'connecting';
+    }
+    replaceStream(stream) {
+        if (this.room) {
+            if (this.localStream && stream) {
+                this.room.replaceStream(stream);
+                this.localStream = stream;
+            }
+            else {
+                this.reset({ stream });
+            }
+        }
     }
     close() {
         this.room.close();
@@ -82,5 +103,15 @@ export function addStreamStopListener(stream, callback) {
             callback();
             callback = function () { };
         }, false);
+    });
+}
+
+export function addShortcut(char, callback) {
+    document.addEventListener('keydown', e => {
+        if (e.target.constructor !== HTMLInputElement) {
+            if (e.key === char) {
+                callback();
+            }
+        }
     });
 }
