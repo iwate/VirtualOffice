@@ -37,9 +37,10 @@ namespace VirtualOffice.Models
 
                 var key = _keyStore.CreateNew(next);
 
-                _logger.LogInformation($"LoginCode: {key.Code}");
+                var url = $"https://{_hostname}/login?code={key.Code}";
 
-                await NotifiyAsync(key.Code, stoppingToken);
+                await NotifyLoggerAsync(url, stoppingToken);
+                await NotifySlackAsync(url, stoppingToken);
 
                 _keyStore.DeleteOld();
 
@@ -47,9 +48,15 @@ namespace VirtualOffice.Models
             }
         }
 
-        public async Task NotifiyAsync(string code, CancellationToken cancellationToken)
+        public Task NotifyLoggerAsync(string url, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(code))
+            _logger.LogInformation($"LoginUrl: {url}");
+            return Task.FromResult(0);
+        }
+
+        public async Task NotifySlackAsync(string url, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(url))
                 return;
 
             if (string.IsNullOrEmpty(_template))
@@ -59,7 +66,6 @@ namespace VirtualOffice.Models
                 return;
 
 
-            var url = $"https://{_hostname}/login?code={code}";
             var client = _httpClientFactory.CreateClient();
 
             var tasks = _slacks.Select(slack =>
