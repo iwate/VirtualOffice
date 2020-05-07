@@ -27,8 +27,7 @@ namespace VirtualOffice
             services.Configure<Config>(Configuration.GetSection("VirtualOffice"));
             services.AddSingleton(
                 HtmlEncoder.Create(allowedRanges: new[] {
-                    UnicodeRanges.BasicLatin,
-                    UnicodeRanges.CjkUnifiedIdeographs 
+                    UnicodeRanges.All
                 }));
             services.AddSingleton<KeyStore>();
             services.AddSingleton<VirtualOfficeStore>();

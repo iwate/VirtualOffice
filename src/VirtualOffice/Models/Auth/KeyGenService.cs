@@ -64,13 +64,11 @@ namespace VirtualOffice.Models
             if (!_slacks.Any())
                 return;
 
-
+            var json = _template.Replace("{url}", url);
             var client = _httpClientFactory.CreateClient();
 
             var tasks = _slacks.Select(slack =>
             {
-                var json = _template.Replace("{url}", url);
-
                 return client.PostAsync(slack, new StringContent(json,  Encoding.UTF8, "application/json"), cancellationToken);
             }).ToArray();
 
