@@ -32,7 +32,8 @@ namespace VirtualOffice.Models
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                DateTimeOffset next = DateTime.SpecifyKind(DateTimeOffset.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
+                var now = DateTimeOffset.UtcNow.AddMinutes(10);
+                var next = (DateTimeOffset)DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
 
                 var key = _keyStore.CreateNew(next);
 
