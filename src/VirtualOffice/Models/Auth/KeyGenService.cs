@@ -32,8 +32,8 @@ namespace VirtualOffice.Models
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var now = DateTimeOffset.UtcNow.AddMinutes(10);
-                var next = (DateTimeOffset)DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
+                var now = DateTimeOffset.UtcNow;
+                var next = (DateTimeOffset)DateTime.SpecifyKind(now.AddDays(1).Date, DateTimeKind.Utc);
 
                 var key = _keyStore.CreateNew(next);
 
@@ -45,6 +45,11 @@ namespace VirtualOffice.Models
                 _keyStore.DeleteOld();
 
                 await Task.Delay((int)(next - DateTimeOffset.UtcNow).TotalMilliseconds, stoppingToken);
+
+                while (next > DateTimeOffset.UtcNow)
+                {
+                    await Task.Delay(5000, stoppingToken);
+                }
             }
         }
 
